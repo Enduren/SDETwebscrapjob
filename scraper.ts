@@ -31,7 +31,7 @@ async function scrapeAndSaveToDoc() {
     // --- NEW: GENERATE UNIQUE FILENAME ---
     // This creates a string like "2026-02-09_14-30-05"
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
-    const fileName = `Jobs/Indeed/SDET/SDET_Jobs_${timestamp}.docx`;
+    const fileName = `SDET_Jobs_${timestamp}.docx`;
 
     const doc = new Document({
       sections: [{
