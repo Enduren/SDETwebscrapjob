@@ -1,0 +1,14 @@
+{
+  "name": "playwrightwebscraper",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "docx": "^9.5.1",
+    "playwright": "latest",
+    "playwright-extra": "latest",
+    "puppeteer-extra-plugin-stealth": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest"
+  }
+}
