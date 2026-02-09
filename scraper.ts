@@ -1,7 +1,8 @@
 import { chromium } from 'playwright-extra';
 import stealthPlugin from 'puppeteer-extra-plugin-stealth';
 import * as fs from 'fs';
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, TextRun } from 'docx';
+import * as path from 'path';
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, TextRun, ExternalHyperlink } from 'docx';
 
 chromium.use(stealthPlugin());
 
@@ -24,36 +25,65 @@ async function scrapeAndSaveToDoc() {
       const card = jobCards.nth(i);
       const title = await card.locator('h2.jobTitle').innerText();
       const company = await card.locator('[data-testid="company-name"]').innerText();
-      const location = await card.locator('[data-testid="text-location"]').innerText();
-      jobs.push({ title, company, location });
+      
+      const linkElement = card.locator('h2.jobTitle a');
+      const href = await linkElement.getAttribute('href');
+      const fullLink = href?.startsWith('http') ? href : `https://www.indeed.com${href}`;
+
+      jobs.push({ title, company, link: fullLink });
     }
 
-    // --- NEW: GENERATE UNIQUE FILENAME ---
-    // This creates a string like "2026-02-09_14-30-05"
+    // --- UPDATED FOLDER LOGIC ---
+    // path.join handles the slashes correctly for your OS
+    const outputFolder = path.join('Jobs', 'Indeed', 'SDET');
+    
+    // recursive: true creates Jobs/ and Jobs/Indeed/ automatically
+    if (!fs.existsSync(outputFolder)) {
+      fs.mkdirSync(outputFolder, { recursive: true });
+    }
+
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
     const fileName = `SDET_Jobs_${timestamp}.docx`;
+    const filePath = path.join(outputFolder, fileName);
 
     const doc = new Document({
       sections: [{
         children: [
           new Paragraph({
-            children: [new TextRun({ text: `Indeed SDET Jobs - Scraped at ${timestamp}`, bold: true, size: 32 })],
+            children: [new TextRun({ text: `Indeed SDET Jobs - ${timestamp}`, bold: true, size: 32 })],
           }),
           new Table({
             width: { size: 100, type: WidthType.PERCENTAGE },
             rows: [
               new TableRow({
                 children: [
-                  new TableCell({ children: [new Paragraph("Job Title")] }),
-                  new TableCell({ children: [new Paragraph("Company")] }),
-                  new TableCell({ children: [new Paragraph("Location")] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Job Title", bold: true })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Company", bold: true })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Link", bold: true })] })] }),
                 ],
               }),
               ...jobs.map(job => new TableRow({
                 children: [
                   new TableCell({ children: [new Paragraph(job.title)] }),
                   new TableCell({ children: [new Paragraph(job.company)] }),
-                  new TableCell({ children: [new Paragraph(job.location)] }),
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new ExternalHyperlink({
+                            children: [
+                              new TextRun({
+                                text: "View Job",
+                                color: "0000FF",
+                                underline: {},
+                              }),
+                            ],
+                            link: job.link || "",
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
                 ],
               })),
             ],
@@ -63,8 +93,8 @@ async function scrapeAndSaveToDoc() {
     });
 
     const buffer = await Packer.toBuffer(doc);
-    fs.writeFileSync(fileName, buffer);
-    console.log(`✅ Success! Data saved to: ${fileName}`);
+    fs.writeFileSync(filePath, buffer);
+    console.log(`✅ Success! Data saved to: ${filePath}`);
 
   } catch (error) {
     console.error("Scraping failed:", error);
