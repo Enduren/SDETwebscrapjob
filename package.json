@@ -8,6 +8,9 @@
     "playwright-extra": "latest",
     "puppeteer-extra-plugin-stealth": "latest"
   },
+  "scripts": {
+    "jobs":"npx tsx scraper.ts"
+  },
   "devDependencies": {
     "@types/node": "latest"
   }

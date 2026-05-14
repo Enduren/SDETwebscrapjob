@@ -1,106 +1,44 @@
+import { QAScraper, DevOpsScraper, SDETScraper, TestopsScraper, TruckDriverScraper, SupplyChainScraper, FraudAnalystScraper, AIDataTrainingScraper, DataAnalystScraper, DataEntryScraper, HealthInformationManagementDirectorScraper, DirectorOfClinicalOperationsScraper, OperationsSupervisorScraper, SiteReliabilityEngineerScraper, TestInfrastructureEngineerScraper } from './Page/JobScrapers.js';
 import { chromium } from 'playwright-extra';
 import stealthPlugin from 'puppeteer-extra-plugin-stealth';
-import * as fs from 'fs';
-import * as path from 'path';
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, TextRun, ExternalHyperlink } from 'docx';
 
+// Apply stealth once globally
 chromium.use(stealthPlugin());
 
-async function scrapeAndSaveToDoc() {
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage();
-  
-  const query = encodeURIComponent('SDET');
-  const url = `https://www.indeed.com/jobs?q=${query}&l=Remote`;
+async function runAllScrapers() {
+  const qa = new QAScraper();
+  const devops = new DevOpsScraper();
+  const sdet = new SDETScraper();
+  const testops= new TestopsScraper();
+  const truckDriver= new TruckDriverScraper();
+  const supplyChain= new SupplyChainScraper();
+  const fraudAnalyst = new FraudAnalystScraper();
+  const aiData = new AIDataTrainingScraper();
+  const dataAnalyst= new DataAnalystScraper();
+  const dataEntry= new DataEntryScraper();
+  const himDir= new HealthInformationManagementDirectorScraper();
+  const dirClinic = new DirectorOfClinicalOperationsScraper();
+  const opsSuper = new OperationsSupervisorScraper();
+  const siteReliabilityEngineer = new SiteReliabilityEngineerScraper();
+  const testInfrastrutureEngineer = new TestInfrastructureEngineerScraper()
 
-  try {
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.job_seen_beacon', { timeout: 15000 });
-
-    const jobCards = page.locator('.job_seen_beacon');
-    const jobCount = await jobCards.count();
-    const jobs = [];
-
-    for (let i = 0; i < jobCount; i++) {
-      const card = jobCards.nth(i);
-      const title = await card.locator('h2.jobTitle').innerText();
-      const company = await card.locator('[data-testid="company-name"]').innerText();
-      
-      const linkElement = card.locator('h2.jobTitle a');
-      const href = await linkElement.getAttribute('href');
-      const fullLink = href?.startsWith('http') ? href : `https://www.indeed.com${href}`;
-
-      jobs.push({ title, company, link: fullLink });
-    }
-
-    // --- UPDATED FOLDER LOGIC ---
-    // path.join handles the slashes correctly for your OS
-    const outputFolder = path.join('Jobs', 'Indeed', 'SDET');
-    
-    // recursive: true creates Jobs/ and Jobs/Indeed/ automatically
-    if (!fs.existsSync(outputFolder)) {
-      fs.mkdirSync(outputFolder, { recursive: true });
-    }
-
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
-    const fileName = `SDET_Jobs_${timestamp}.docx`;
-    const filePath = path.join(outputFolder, fileName);
-
-    const doc = new Document({
-      sections: [{
-        children: [
-          new Paragraph({
-            children: [new TextRun({ text: `Indeed SDET Jobs - ${timestamp}`, bold: true, size: 32 })],
-          }),
-          new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            rows: [
-              new TableRow({
-                children: [
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Job Title", bold: true })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Company", bold: true })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Link", bold: true })] })] }),
-                ],
-              }),
-              ...jobs.map(job => new TableRow({
-                children: [
-                  new TableCell({ children: [new Paragraph(job.title)] }),
-                  new TableCell({ children: [new Paragraph(job.company)] }),
-                  new TableCell({
-                    children: [
-                      new Paragraph({
-                        children: [
-                          new ExternalHyperlink({
-                            children: [
-                              new TextRun({
-                                text: "View Job",
-                                color: "0000FF",
-                                underline: {},
-                              }),
-                            ],
-                            link: job.link || "",
-                          }),
-                        ],
-                      }),
-                    ],
-                  }),
-                ],
-              })),
-            ],
-          }),
-        ],
-      }],
-    });
-
-    const buffer = await Packer.toBuffer(doc);
-    fs.writeFileSync(filePath, buffer);
-    console.log(`✅ Success! Data saved to: ${filePath}`);
-
-  } catch (error) {
-    console.error("Scraping failed:", error);
-  } finally {
-    await browser.close();
-  }
+  // Running them one after another
+  await qa.scrape();
+  await devops.scrape();
+  await sdet.scrape();
+  // await testops.scrape();
+  // await truckDriver.scrape();
+  // await supplyChain.scrape();
+  // await fraudAnalyst.scrape();
+  // await aiData.scrape();
+  // await dataAnalyst.scrape();
+  // await dataEntry.scrape();
+  // await himDir.scrape();
+  // await dirClinic.scrape();
+  // await opsSuper.scrape();
+  // await siteReliabilityEngineer.scrape()
+  // await testInfrastrutureEngineer.scrape()
+  console.log('🏁 All job searches complete.');
 }
 
-scrapeAndSaveToDoc();
+runAllScrapers();
