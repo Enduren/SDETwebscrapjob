@@ -27,8 +27,6 @@ Clone the repository and install the dependencies:
 
 npm install
 
-and add folder Jobs/Indeed/SDET
-
 # Install Playwright browser binaries
 
 npx playwright install chromium
